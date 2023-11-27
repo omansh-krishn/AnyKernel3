@@ -158,7 +158,7 @@ unpack_ramdisk() {
   if [ -f ramdisk.cpio ]; then
     comp=$($bin/magiskboot decompress ramdisk.cpio 2>&1 | grep -v 'raw' | sed -n 's;.*\[\(.*\)\];\1;p');
   else
-    abort "No ramdisk found to unpack. Aborting...";
+    echo "No ramdisk found to unpack. Aborting...";
   fi;
   if [ "$comp" ]; then
     mv -f ramdisk.cpio ramdisk.cpio.$comp;
@@ -176,7 +176,7 @@ unpack_ramdisk() {
   cd $ramdisk;
   EXTRACT_UNSAFE_SYMLINKS=1 cpio -d -F $split_img/ramdisk.cpio -i;
   if [ $? != 0 -o ! "$(ls)" ]; then
-    abort "Unpacking ramdisk failed. Aborting...";
+    echo "Unpacking ramdisk failed. Aborting...";
   fi;
   if [ -d "$home/rdtmp" ]; then
     cp -af $home/rdtmp/* .;
@@ -185,7 +185,7 @@ unpack_ramdisk() {
 ### dump_boot (dump and split image, then extract ramdisk)
 dump_boot() {
   split_boot;
-  unpack_ramdisk;
+  [ -f "$split_img/ramdisk.cpio.gz" -o -f "$split_img/ramdisk.cpio" ] && unpack_ramdisk;
 }
 ###
 
@@ -233,7 +233,7 @@ repack_ramdisk() {
     fi;
   fi;
   if [ "$packfail" ]; then
-    abort "Repacking ramdisk failed. Aborting...";
+    echo "Repacking ramdisk failed. Aborting...";
   fi;
 
   if [ -f "$bin/mkmtkhdr" -a -f "$split_img/boot.img-base" ]; then
@@ -565,7 +565,7 @@ flash_dtbo() { flash_generic dtbo; }
 
 ### write_boot (repack ramdisk then build, sign and write image, vendor_dlkm and dtbo)
 write_boot() {
-  repack_ramdisk;
+  [ -d "$ramdisk" ] && repack_ramdisk;
   flash_boot;
   flash_generic vendor_boot; # temporary until hdr v4 can be unpacked/repacked fully by magiskboot
   flash_generic vendor_kernel_boot; # temporary until hdr v4 can be unpacked/repacked fully by magiskboot
